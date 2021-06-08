@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     # BUID MODEL
     global_model = LSTM(num_classes, input_size, hidden_size, num_layers)
-    global_model.to(device)
+    global_model.to(cuda_dev)
     global_model.train()
     print(global_model)
     # copy weights
