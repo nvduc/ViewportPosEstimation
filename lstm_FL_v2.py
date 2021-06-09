@@ -22,8 +22,6 @@ from common import *
 
 import time
 
-
-
 if __name__ == '__main__':
 
     args = args_parser()
@@ -59,7 +57,7 @@ if __name__ == '__main__':
     num_classes = 1
 
     for runid in range(args.num_run):
-        # BUID MODEL
+        # BUID MODELs
         global_model = LSTM(num_classes, input_size, hidden_size, num_layers)
         global_model.to(cuda_dev)
         global_model.train()
@@ -67,6 +65,13 @@ if __name__ == '__main__':
         print("Number of params: ", count_parameters(global_model))
         # copy weights
         global_weights = global_model.state_dict()
+
+        # local models
+        local_model = {}
+        for uid in uid_list:
+            local_model[uid] = LSTM(num_classes, input_size, hidden_size, num_layers)
+            local_model[uid].to(cuda_dev)
+            local_model[uid].train()
 
         # criterion
         criterion = torch.nn.MSELoss().to(cuda_dev)
@@ -78,18 +83,25 @@ if __name__ == '__main__':
         print_every = 2
         val_loss_pre, counter = 0, 0
         acc_result = []
+        rmse_round = {}
+        for uid in uid_list:
+            rmse_round[uid] = []
+        local_rmse = np.zeros(len(uid_list))
 
-        for rnd in range(num_rounds):
+        convergence = False
+        rnd = 0
+        while not convergence:
             local_weights, local_losses, acc = [], [], []
             print(f'\n | Global Training Round : {rnd+1} |\n')
 
             global_model.train()
 
+            cnt = 0
             for uid in uid_list:
-                local_model = copy.deepcopy(global_model)
-                optimizer = torch.optim.Adam(local_model.parameters(), lr=learning_rate)
+                gmodel_copy = copy.deepcopy(global_model)
+                optimizer = torch.optim.Adam(gmodel_copy.parameters(), lr=learning_rate)
                 for epoch in range(num_epochs):
-                    outputs = local_model(trainX[uid])
+                    outputs = gmodel_copy(trainX[uid])
                     optimizer.zero_grad()
                     # obtain the loss function
                     loss = criterion(outputs, trainY[uid])
@@ -98,25 +110,41 @@ if __name__ == '__main__':
                     # if epoch % 100 == 0:
                     #     print("G-round: %d, user #%d, Epoch: %d, loss: %1.5f, rmse: %.5f" % (rnd+1, uid, epoch, loss.item(), np.sqrt(loss.item())))
                 
-                local_model.eval()
-                test_pred = local_model(testX[uid])
-                train_pred = local_model(trainX[uid])
+                gmodel_copy.eval()
+                test_pred = gmodel_copy(testX[uid])
+                train_pred = gmodel_copy(trainX[uid])
 
                 test_pred = inverse_transform(test_pred.data.cpu().numpy(), min_phi, max_phi)
                 test_gt = inverse_transform(testY[uid].data.cpu().numpy(), min_phi, max_phi)
 
                 print("G-round: %d, user #%d, rmse: %.2f" %(rnd + 1, uid, rmse(test_pred.flatten(), test_gt.flatten())))
-                acc.append(rmse(test_pred.flatten(), test_gt.flatten()))
+                rmse_tmp = rmse(test_pred.flatten(), test_gt.flatten())
+                rmse_round[uid].append(rmse_tmp)
 
-                w = local_model.state_dict()
+                if rnd == 0 or rmse_round[uid][rnd] < local_rmse[uid]: ## Update local model ##
+                    w = gmodel_copy.state_dict()
+                    local_model[uid] = copy.deepcopy(gmodel_copy)
+                    local_rmse[uid] = rmse_tmp
+                    acc.append(rmse_tmp)
+                else:
+                    w = local_model[uid].state_dict()
+                    acc.append(-local_rmse[uid])
+                    cnt += 1
+
                 local_weights.append(copy.deepcopy(w))
             # update global weights (averaging)
             global_weights = average_weights(local_weights)
+
             # update global weights
             global_model.load_state_dict(global_weights)
             acc_result.append(acc)
 
+            if cnt == len(uid_list):
+                convergence = True
+
+            rnd += 1
+
         t = int(time.time())
         df = pd.DataFrame(acc_result, columns = ['user #0', 'user #1', 'user #2', 'user #3', 'user #4', 'user #5'])
-        df.to_csv("FL_user_{}_HS_{}_round_{}_hidden_{}_{}.csv".format(len(uid_list), seq_length, num_rounds, hidden_size, t), index=None)
+        df.to_csv("FL_v2_user_{}_HS_{}_round_{}_hidden_{}_{}.csv".format(len(uid_list), seq_length, num_rounds, hidden_size, t), index=None)
 

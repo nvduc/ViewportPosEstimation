@@ -1,9 +1,60 @@
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LinearRegression
 import copy
 import torch
 from torchvision import datasets, transforms
+import argparse
 
+def load_dataset(datapath, uid, test_vid, seq_length, delay_length):
+    # Load all user view data
+    df = pd.read_csv("view_list.csv")
+    vids = df.loc[df['uid'] == uid]['vid']
+    # print(vids)
+    df_all = {}
+    for vid in vids:
+        df_all[vid] = pd.read_csv("{}xyz_vid_{}_uid_{}.txt".format(datapath, vid, uid), sep='\t', names=['phi', 'theta'])
+    max_phi, min_phi = 180, -180
+    max_theta, min_theta = 90, -90
+    x_all, y_all = [], []
+    # train data
+    for vid in df_all:
+        if vid != test_vid:
+            training_data = df_all[vid].iloc[:,0:1].values
+            training_data = transform(training_data, min_phi, max_phi)
+            x, y = sliding_windows(training_data, seq_length, delay_length)
+            x_all.append(x)
+            y_all.append(y)
+    x_train = np.concatenate(x_all,0)
+    y_train = np.concatenate(y_all,0)
+    # test data
+    test_set = df_all[test_vid].iloc[:,0:1].values
+    test_data = transform(test_set, min_phi, max_phi)
+    x_test, y_test = sliding_windows(test_data, seq_length, delay_length)
+    return x_train, y_train, x_test, y_test
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+def args_parser():
+    parser = argparse.ArgumentParser()
+
+    # federated arguments (Notation for the arguments followed from paper)
+    parser.add_argument('--num_epochs', type=int, default=1000,
+                        help="number of rounds of training")
+    parser.add_argument('--num_rounds', type=int, default=5,
+                        help="number of global tranining rounds")
+    parser.add_argument('--hidden_size', type=int, default=5,
+                        help="LSTM's hidden size")
+    parser.add_argument('--num_layers', type=int, default=1,
+                        help="LSTM's number of layers")
+    parser.add_argument('--seq_length', type=int, default=30,
+                        help="History window size")
+    parser.add_argument('--num_run', type=int, default=5,
+                        help="Number of runs")
+
+    args = parser.parse_args()
+    return args
 def average_weights(w):
     """
     Returns the average of the weights.
