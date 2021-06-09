@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# Incorporate latitute values --> Getting final prediction performance
 
 
 import numpy as np
