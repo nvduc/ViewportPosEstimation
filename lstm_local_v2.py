@@ -88,10 +88,10 @@ if __name__ == '__main__':
                 test_err.append(ang_dist(test_gt[i], test_gt_theta[i], test_pred[i], test_pred_theta[i]))
             train_result = [train_gt, train_gt_theta, train_pred, train_pred_theta, train_err]
             df_train_result = pd.DataFrame(np.array(train_result).transpose(), columns=['phi','theta','est_phi','est_theta', 'pred_err'])
-            df_train_result.to_csv('lstm_local_train_result_uid_{}_run_{}_{}.csv'.format(uid, runid, int(time.time())), index=None)
+            df_train_result.to_csv('result/lstm_local_train_result_uid_{}_run_{}_{}.csv'.format(uid, runid, int(time.time())), index=None)
             test_result = [test_gt, test_gt_theta, test_pred, test_pred_theta, test_err]
             df_test_result = pd.DataFrame(np.array(test_result).transpose(), columns=['phi','theta','est_phi','est_theta', 'pred_err'])
-            df_test_result.to_csv('lstm_local_train_result_uid_{}_run_{}_{}.csv'.format(uid, runid, int(time.time())), index=None)
+            df_test_result.to_csv('result/lstm_local_train_result_uid_{}_run_{}_{}.csv'.format(uid, runid, int(time.time())), index=None)
 
             rmse_train = np.sqrt(np.mean(np.array(train_err)*np.array(train_err)))
             rmse_test = np.sqrt(np.mean(np.array(test_err)*np.array(test_err)))

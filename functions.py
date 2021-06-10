@@ -152,22 +152,22 @@ def load_dataset_full(datapath, uid, test_vid, seq_length, delay_length):
     x_train_theta, y_train_theta, x_test_theta, y_test_theta = load_dataset_theta(datapath, uid, test_vid, seq_length, delay_length)
 
     # filtering
-    print("### filtering....")
-    cnt = 0
-    for i in range(len(x_train)):
-        FLG = False
-        for j in range(len(x_train[i]) -1):
-            if np.absolute(x_train[i][j] - x_train[i][j+1]) > 0.5:
-                FLG = True
-        if FLG:
-            print("Removed ", x_train[i])
-            cnt += 1
-            x_train = np.delete(x_train, i, 0)
-            y_train = np.delete(y_train, i, 0)
-            x_train_theta = np.delete(x_train_theta, i, 0)
-            y_train_theta = np.delete(y_train_theta, i, 0)
-
-    print("Filtered #%d inputs\n" %(cnt))
+    # print("### filtering....")
+    # cnt = 0
+    # for i in range(len(x_train)):
+    #     FLG = False
+    #     for j in range(len(x_train[i]) -1):
+    #         if np.absolute(x_train[i][j] - x_train[i][j+1]) > 0.5:
+    #             FLG = True
+    #     if FLG:
+    #         print("Removed ", x_train[i])
+    #         cnt += 1
+    #         x_train = np.delete(x_train, i, 0)
+    #         y_train = np.delete(y_train, i, 0)
+    #         x_train_theta = np.delete(x_train_theta, i, 0)
+    #         y_train_theta = np.delete(y_train_theta, i, 0)
+    # print("Filtered #%d inputs\n" %(cnt))
+    
     return x_train, y_train, x_test, y_test, x_train_theta, y_train_theta, x_test_theta, y_test_theta
 
 def count_parameters(model):
