@@ -262,6 +262,6 @@ def LR(x, pred_hori):
 
         # predict
         y_pred.append(reg.predict(x_test))
-    return np.array(y_pred)
+    return np.array(y_pred).flatten()
 
 
