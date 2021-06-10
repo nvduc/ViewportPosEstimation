@@ -118,10 +118,56 @@ def load_dataset_phi(datapath, uid, test_vid, seq_length, delay_length):
     x_test, y_test = sliding_windows(test_data, seq_length, delay_length)
     return x_train, y_train, x_test, y_test
 
+
+# load phi component
 def load_dataset(datapath, uid, test_vid, seq_length, delay_length):
+    # Load all user view data
+    df = pd.read_csv("view_list.csv")
+    vids = df.loc[df['uid'] == uid]['vid']
+    # print(vids)
+    df_all = {}
+    for vid in vids:
+        df_all[vid] = pd.read_csv("{}xyz_vid_{}_uid_{}.txt".format(datapath, vid, uid), sep='\t', names=['phi', 'theta'])
+    max_phi, min_phi = 180, -180
+    max_theta, min_theta = 90, -90
+    x_all, y_all = [], []
+    # train data
+    for vid in df_all:
+        if vid != test_vid:
+            training_data = df_all[vid].iloc[:,0:1].values # longitudes
+            training_data = transform(training_data, min_phi, max_phi)
+            x, y = sliding_windows(training_data, seq_length, delay_length)
+            x_all.append(x)
+            y_all.append(y)
+    x_train = np.concatenate(x_all,0)
+    y_train = np.concatenate(y_all,0)
+    # test data
+    test_set = df_all[test_vid].iloc[:,0:1].values
+    test_data = transform(test_set, min_phi, max_phi)
+    x_test, y_test = sliding_windows(test_data, seq_length, delay_length)
+    return x_train, y_train, x_test, y_test
+
+def load_dataset_full(datapath, uid, test_vid, seq_length, delay_length):
     x_train, y_train, x_test, y_test = load_dataset_phi(datapath, uid, test_vid, seq_length, delay_length)
     x_train_theta, y_train_theta, x_test_theta, y_test_theta = load_dataset_theta(datapath, uid, test_vid, seq_length, delay_length)
 
+    # filtering
+    print("### filtering....")
+    cnt = 0
+    for i in range(len(x_train)):
+        FLG = False
+        for j in range(len(x_train[i]) -1):
+            if np.absolute(x_train[i][j] - x_train[i][j+1]) > 0.5:
+                FLG = True
+        if FLG:
+            print("Removed ", x_train[i])
+            cnt += 1
+            x_train = np.delete(x_train, i, 0)
+            y_train = np.delete(y_train, i, 0)
+            x_train_theta = np.delete(x_train_theta, i, 0)
+            y_train_theta = np.delete(y_train_theta, i, 0)
+
+    print("Filtered #%d inputs\n" %(cnt))
     return x_train, y_train, x_test, y_test, x_train_theta, y_train_theta, x_test_theta, y_test_theta
 
 def count_parameters(model):

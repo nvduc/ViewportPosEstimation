@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-
+# using lstm-based network at individual users
 # Incorporate latitute values --> Getting final prediction performance
 
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     trainX_theta, trainY_theta, testX_theta, testY_theta = {}, {}, {}, {}
     
     for uid in uid_list:
-        x_train[uid], y_train[uid], x_test[uid], y_test[uid], x_train_theta[uid], y_train_theta[uid], x_test_theta[uid], y_test_theta[uid] = load_dataset(datapath, uid, test_vid, seq_length, delay_length)
+        x_train[uid], y_train[uid], x_test[uid], y_test[uid], x_train_theta[uid], y_train_theta[uid], x_test_theta[uid], y_test_theta[uid] = load_dataset_full(datapath, uid, test_vid, seq_length, delay_length)
         
         if cuda_dev != None:
             trainX[uid] = Variable(torch.Tensor(np.array(x_train[uid])).cuda())
@@ -88,20 +88,20 @@ if __name__ == '__main__':
                 test_err.append(ang_dist(test_gt[i], test_gt_theta[i], test_pred[i], test_pred_theta[i]))
             train_result = [train_gt, train_gt_theta, train_pred, train_pred_theta, train_err]
             df_train_result = pd.DataFrame(np.array(train_result).transpose(), columns=['phi','theta','est_phi','est_theta', 'pred_err'])
-            df_train_result.to_csv('train_result.csv', index=None)
+            df_train_result.to_csv('lstm_local_train_result_uid_{}_run_{}_{}.csv'.format(uid, runid, int(time.time())), index=None)
             test_result = [test_gt, test_gt_theta, test_pred, test_pred_theta, test_err]
             df_test_result = pd.DataFrame(np.array(test_result).transpose(), columns=['phi','theta','est_phi','est_theta', 'pred_err'])
-            df_test_result.to_csv('test_result.csv', index=None)
+            df_test_result.to_csv('lstm_local_train_result_uid_{}_run_{}_{}.csv'.format(uid, runid, int(time.time())), index=None)
 
             rmse_train = np.sqrt(np.mean(np.array(train_err)*np.array(train_err)))
             rmse_test = np.sqrt(np.mean(np.array(test_err)*np.array(test_err)))
-            print(rmse_train, rmse_test)
-            exit(1)
+            rmse_run.append(rmse_test)
+        rmse_all.append(rmse_run)
 
 # record results
 cols = []
 for uid in uid_list:
     cols.append('user #{}'.format(uid))
 df = pd.DataFrame(rmse_all, columns=cols)
-df.to_csv("result/lstm_local_{}.csv".format(int(time.time())), index=None)
+df.to_csv("result/lstm_local_rmse_{}.csv".format(int(time.time())), index=None)
 
