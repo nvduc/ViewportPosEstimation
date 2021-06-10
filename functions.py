@@ -244,7 +244,7 @@ def LAST(x_test):
     y_pred = []
     for x in x_test:
         y_pred.append(x[-1])
-    return np.array(y_pred)
+    return np.array(y_pred).flatten()
 
 
 #### Linear regression ####
