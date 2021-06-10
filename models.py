@@ -11,7 +11,7 @@ class LSTM(nn.Module):
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
-        # self.seq_length = seq_length
+        self.isCUDA = torch.cuda.is_available()
         
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True)
@@ -19,11 +19,19 @@ class LSTM(nn.Module):
         self.fc = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
-        h_0 = Variable(torch.zeros(
-            self.num_layers, x.size(0), self.hidden_size).cuda())
-        
-        c_0 = Variable(torch.zeros(
-            self.num_layers, x.size(0), self.hidden_size).cuda())
+
+        if self.isCUDA:
+            h_0 = Variable(torch.zeros(
+                self.num_layers, x.size(0), self.hidden_size).cuda())
+            
+            c_0 = Variable(torch.zeros(
+                self.num_layers, x.size(0), self.hidden_size).cuda())
+        else:
+            h_0 = Variable(torch.zeros(
+                self.num_layers, x.size(0), self.hidden_size))
+            
+            c_0 = Variable(torch.zeros(
+                self.num_layers, x.size(0), self.hidden_size))
 
         
         # Propagate input through LSTM
