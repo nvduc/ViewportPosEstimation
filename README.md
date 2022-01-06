@@ -1,6 +1,6 @@
 # ViewportPosEstimation
 
-visible_mask_8x8_FoV_90.txt
+visible_tile_8x8_FoV_90.txt
 This file contains the visible tiles at each viewport positions when the number of tiles is 64 and the viewport size is 90x90 (degrees).
 Each line is format as follows.
 0,-90,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,24654,24795,24654,24795,24654,24795,24654,24795,74676,75048,74850,75048,74857,75041,74850,75048,15457,15596,15456,15597,15562,15491,15484,15569
